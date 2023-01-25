@@ -162,6 +162,12 @@ func (d *diskPartition) active() bool {
 	return false
 }
 
+// Disk partition will always be in size, given a memory partition
+// will be flushed after checking that.
+func (d *diskPartition) underMaxSize() bool {
+	return false
+}
+
 func (d *diskPartition) clean() error {
 	if err := os.RemoveAll(d.dirPath); err != nil {
 		return fmt.Errorf("failed to remove all files inside the partition (%d~%d): %w", d.minTimestamp(), d.maxTimestamp(), err)

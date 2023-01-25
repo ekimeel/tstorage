@@ -43,6 +43,9 @@ const (
 	defaultWriteTimeout       = 30 * time.Second
 	defaultWALBufferedSize    = 4096
 
+	defaultPartitionSize = 1024 * 50 // 50KiB per partition
+	//defaultDatabaseSize  = 1024 * 1024 * 10 // 10MiB per database?
+
 	writablePartitionsNum = 2
 	checkExpiredInterval  = time.Hour
 
@@ -89,6 +92,24 @@ type DataPoint struct {
 
 // Option is an optional setting for NewStorage.
 type Option func(*storage)
+
+// WithPartitionMaxSize specifies the maximum size a partition can have
+// before been substuted by a new one.
+//
+// Defaults to 50KiB.
+func WithPartitionMaxSize(partitionMaxSize int64) Option {
+	return func(s *storage) {
+		s.partitionMaxSize = partitionMaxSize
+	}
+}
+
+/*
+func WithDatabaseSize(databaseSize int) Option {
+	return func(s *storage) {
+		s.databaseSize = databaseSize
+	}
+}
+*/
 
 // WithDataPath specifies the path to directory that stores time-series data.
 // Use this to make time-series data persistent on disk.
@@ -182,6 +203,8 @@ func NewStorage(opts ...Option) (Storage, error) {
 		wal:                &nopWAL{},
 		logger:             &nopLogger{},
 		doneCh:             make(chan struct{}, 0),
+		partitionMaxSize:   defaultPartitionSize,
+		//databaseSize:  defaultDatabaseSize,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -192,6 +215,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 		return s, nil
 	}
 
+	// TODO: Possible point for multiple database implementation (for T8 integration)
 	if err := os.MkdirAll(s.dataPath, fs.ModePerm); err != nil {
 		return nil, fmt.Errorf("failed to make data directory %s: %w", s.dataPath, err)
 	}
@@ -277,6 +301,8 @@ type storage struct {
 	timestampPrecision TimestampPrecision
 	dataPath           string
 	writeTimeout       time.Duration
+	partitionMaxSize   int64
+	//databaseSize int
 
 	logger         Logger
 	workersLimitCh chan struct{}
@@ -293,6 +319,9 @@ func (s *storage) InsertRows(rows []Row) error {
 	insert := func() error {
 		defer func() { <-s.workersLimitCh }()
 		if err := s.ensureActiveHead(); err != nil {
+			return err
+		}
+		if err := s.ensureHeadInSize(); err != nil {
 			return err
 		}
 		iterator := s.partitionList.newIterator()
@@ -356,6 +385,27 @@ func (s *storage) ensureActiveHead() error {
 			s.logger.Printf("failed to flush in-memory partitions: %v", err)
 		}
 	}()
+	return nil
+}
+
+// ensureHeadInSize ensures the head of partitionList is under its maximum defined size.
+// If none, it creates a new one.
+func (s *storage) ensureHeadInSize() error {
+	head := s.partitionList.getHead()
+	if head != nil && head.underMaxSize() {
+		return nil
+	}
+
+	// Head partition does not exist or exceds size
+	if err := s.newPartition(nil, true); err != nil {
+		return err
+	}
+	go func() {
+		if err := s.flushPartitions(); err != nil {
+			s.logger.Printf("failed to flush in-memory partitions: %v", err)
+		}
+	}()
+
 	return nil
 }
 
@@ -432,7 +482,7 @@ func (s *storage) Close() error {
 
 func (s *storage) newPartition(p partition, punctuateWal bool) error {
 	if p == nil {
-		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision)
+		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision, s.partitionMaxSize)
 	}
 	s.partitionList.insert(p)
 	if punctuateWal {

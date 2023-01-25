@@ -1,10 +1,11 @@
 package tstorage
 
 type fakePartition struct {
-	minT      int64
-	maxT      int64
-	numPoints int
-	IsActive  bool
+	minT             int64
+	maxT             int64
+	numPoints        int
+	IsActive         bool
+	partitionMaxSize bool
 
 	err error
 }
@@ -31,6 +32,10 @@ func (f *fakePartition) size() int {
 
 func (f *fakePartition) active() bool {
 	return f.IsActive
+}
+
+func (f *fakePartition) underMaxSize() bool {
+	return f.partitionMaxSize
 }
 
 func (f *fakePartition) clean() error {

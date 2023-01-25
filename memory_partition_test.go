@@ -2,6 +2,7 @@ package tstorage
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 	}{
 		{
 			name:            "insert in-order rows",
-			memoryPartition: newMemoryPartition(nil, 0, "").(*memoryPartition),
+			memoryPartition: newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition),
 			rows: []Row{
 				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
 				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
@@ -36,7 +37,7 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 		{
 			name: "insert out-of-order rows",
 			memoryPartition: func() *memoryPartition {
-				m := newMemoryPartition(nil, 0, "").(*memoryPartition)
+				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
 					{Metric: "metric1", DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
 				})
@@ -80,7 +81,7 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 			metric:          "unknown",
 			start:           1,
 			end:             2,
-			memoryPartition: newMemoryPartition(nil, 0, "").(*memoryPartition),
+			memoryPartition: newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition),
 			want:            []*DataPoint{},
 		},
 		{
@@ -89,7 +90,7 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 			start:  2,
 			end:    4,
 			memoryPartition: func() *memoryPartition {
-				m := newMemoryPartition(nil, 0, "").(*memoryPartition)
+				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
 					{
 						Metric:    "metric1",
@@ -125,7 +126,7 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 			start:  1,
 			end:    4,
 			memoryPartition: func() *memoryPartition {
-				m := newMemoryPartition(nil, 0, "").(*memoryPartition)
+				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
 					{
 						Metric:    "metric1",

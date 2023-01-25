@@ -6,9 +6,12 @@ package tstorage
 //
 // The partition's lifecycle is: Writable -> ReadOnly.
 // *Writable*:
-//   it can be written. Only one partition can be writable within a partition list.
+//
+//	it can be written. Only one partition can be writable within a partition list.
+//
 // *ReadOnly*:
-//   it can't be written. Partitions will be ReadOnly if it exceeds the partition range.
+//
+//	it can't be written. Partitions will be ReadOnly if it exceeds the partition range.
 type partition interface {
 	// Write operations
 	//
@@ -31,6 +34,8 @@ type partition interface {
 	size() int
 	// active means not only writable but having the qualities to be the head partition.
 	active() bool
+	// returns wheter the partition is under the fixed maximum size
+	underMaxSize() bool
 	// expired means it should get removed.
 	expired() bool
 }

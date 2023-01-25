@@ -6,6 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/DmitriyVTitov/size"
 )
 
 // A memoryPartition implements a partition to store data points on heap.
@@ -25,9 +27,12 @@ type memoryPartition struct {
 	partitionDuration  int64
 	timestampPrecision TimestampPrecision
 	once               sync.Once
+
+	// Maximum size after which a partition gets persisted
+	partitionMaxSize int64
 }
 
-func newMemoryPartition(wal wal, partitionDuration time.Duration, precision TimestampPrecision) partition {
+func newMemoryPartition(wal wal, partitionDuration time.Duration, precision TimestampPrecision, partitionMaxSize int64) partition {
 	if wal == nil {
 		wal = &nopWAL{}
 	}
@@ -48,6 +53,7 @@ func newMemoryPartition(wal wal, partitionDuration time.Duration, precision Time
 		partitionDuration:  d,
 		wal:                wal,
 		timestampPrecision: precision,
+		partitionMaxSize:   partitionMaxSize,
 	}
 }
 
@@ -56,7 +62,8 @@ func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 	if len(rows) == 0 {
 		return nil, fmt.Errorf("no rows given")
 	}
-	// FIXME: Just emitting log is enough
+	// FIXME: Just emitting log is enoughAlex Edwards - Let's Go
+
 	err := m.wal.append(operationInsert, rows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write to WAL: %w", err)
@@ -154,6 +161,13 @@ func (m *memoryPartition) size() int {
 
 func (m *memoryPartition) active() bool {
 	return m.maxTimestamp()-m.minTimestamp()+1 < m.partitionDuration
+}
+
+func (m *memoryPartition) underMaxSize() bool {
+	// We will check the size of the variable containing the memoryPartition in memory
+	// TODO: Keep an eye on size.Of(), to see if it behaves as expected (test case, important)
+
+	return int64(size.Of(m)) < m.partitionMaxSize
 }
 
 func (m *memoryPartition) clean() error {
