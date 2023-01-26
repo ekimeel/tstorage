@@ -22,6 +22,8 @@ type partitionList interface {
 	swap(old, new partition) error
 	// getHead gives back the head node which is the newest one.
 	getHead() partition
+	// getTail gives back the tail node which is the oldest one.
+	getTail() partition
 	// size returns the number of partitions of itself.
 	size() int
 	// newIterator gives back the iterator object fot this list.
@@ -68,6 +70,15 @@ func (p *partitionListImpl) getHead() partition {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.head.value()
+}
+
+func (p *partitionListImpl) getTail() partition {
+	if p.size() <= 0 {
+		return nil
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.tail.value()
 }
 
 func (p *partitionListImpl) insert(partition partition) {

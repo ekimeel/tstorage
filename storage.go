@@ -25,7 +25,8 @@ var (
 	// goroutines on data ingestion path.
 	defaultWorkersLimit = cgroup.AvailableCPUs()
 
-	partitionDirRegex = regexp.MustCompile(`^p-.+`)
+	partitionDirRegex   = regexp.MustCompile(`^p-.+`)
+	partitionFilesRegex = regexp.MustCompile(`p-.+[/\\\\].+`)
 )
 
 // TimestampPrecision represents precision of timestamps. See WithTimestampPrecision
@@ -43,8 +44,8 @@ const (
 	defaultWriteTimeout       = 30 * time.Second
 	defaultWALBufferedSize    = 4096
 
-	defaultPartitionSize = 1024 * 50 // 50KiB per partition
-	//defaultDatabaseSize  = 1024 * 1024 * 10 // 10MiB per database?
+	defaultPartitionMaxSize = 1024 * 50        // 50KiB per partition
+	defaultDatabaseMaxSize  = 1024 * 1024 * 10 // 10MiB per database
 
 	writablePartitionsNum = 2
 	checkExpiredInterval  = time.Hour
@@ -103,13 +104,16 @@ func WithPartitionMaxSize(partitionMaxSize int64) Option {
 	}
 }
 
-/*
-func WithDatabaseSize(databaseSize int) Option {
+// WithDatabaseMaxSize specifies the maximum size the database can have.
+// Higher size leads to deletion of oldest partitions until the database
+// fits within the maximum stablished size.
+//
+// Defaults to 10MiB.
+func WithDatabaseMaxSize(databaseMaxSize int64) Option {
 	return func(s *storage) {
-		s.databaseSize = databaseSize
+		s.databaseMaxSize = databaseMaxSize
 	}
 }
-*/
 
 // WithDataPath specifies the path to directory that stores time-series data.
 // Use this to make time-series data persistent on disk.
@@ -203,8 +207,8 @@ func NewStorage(opts ...Option) (Storage, error) {
 		wal:                &nopWAL{},
 		logger:             &nopLogger{},
 		doneCh:             make(chan struct{}, 0),
-		partitionMaxSize:   defaultPartitionSize,
-		//databaseSize:  defaultDatabaseSize,
+		partitionMaxSize:   defaultPartitionMaxSize,
+		databaseMaxSize:    defaultDatabaseMaxSize,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -302,7 +306,7 @@ type storage struct {
 	dataPath           string
 	writeTimeout       time.Duration
 	partitionMaxSize   int64
-	//databaseSize int
+	databaseMaxSize    int64
 
 	logger         Logger
 	workersLimitCh chan struct{}
@@ -482,6 +486,20 @@ func (s *storage) Close() error {
 
 func (s *storage) newPartition(p partition, punctuateWal bool) error {
 	if p == nil {
+		overSize, err := s.checkDBOverMaxSize()
+		if err != nil {
+			return fmt.Errorf("failed to check database maximum size: %w", err)
+		}
+
+		for overSize {
+			tail := s.partitionList.getTail()
+			s.partitionList.remove(tail)
+
+			overSize, err = s.checkDBOverMaxSize()
+			if err != nil {
+				return fmt.Errorf("failed to check database maximum size: %w", err)
+			}
+		}
 		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision, s.partitionMaxSize)
 	}
 	s.partitionList.insert(p)
@@ -489,6 +507,33 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 		return s.wal.punctuate()
 	}
 	return nil
+}
+
+// Returns whether the database has exceeded its maximum size
+func (s *storage) checkDBOverMaxSize() (bool, error) {
+	var size int64
+	err := filepath.WalkDir(s.dataPath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !partitionFilesRegex.MatchString(path) || d.IsDir() {
+			return nil
+		}
+
+		fInfo, err := d.Info()
+		if err != nil {
+			return err
+		}
+		size += fInfo.Size()
+
+		return nil
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to walk database directory: %w", err)
+	}
+
+	return size <= s.databaseMaxSize, err
 }
 
 // flushPartitions persists all in-memory partitions ready to persisted.
