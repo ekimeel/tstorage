@@ -46,6 +46,7 @@ const (
 
 	defaultPartitionMaxSize = 1024 * 50        // 50KiB per partition
 	defaultDatabaseMaxSize  = 1024 * 1024 * 10 // 10MiB per database
+	defaultMaxPartitions    = 200              // 200 partitions per database
 
 	writablePartitionsNum = 2
 	checkExpiredInterval  = time.Hour
@@ -112,6 +113,19 @@ func WithPartitionMaxSize(partitionMaxSize int64) Option {
 func WithDatabaseMaxSize(databaseMaxSize int64) Option {
 	return func(s *storage) {
 		s.databaseMaxSize = databaseMaxSize
+	}
+}
+
+// WithMaxPartitions specifies the maximum amount of partitions the database
+// can have. Higher number leads to deletion of oldest partitions, until the
+// database fits within the maximum. Memory partitions are not taken in
+// consideration.
+//
+// Defaults to 200 partitions. A value of 0 implies the same behaviour as the
+// in memory mode, which means no data will be persisted.
+func WithMaxPartitions(maxPartitions int64) Option {
+	return func(s *storage) {
+		s.maxPartitions = maxPartitions
 	}
 }
 
@@ -209,6 +223,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 		doneCh:             make(chan struct{}, 0),
 		partitionMaxSize:   defaultPartitionMaxSize,
 		databaseMaxSize:    defaultDatabaseMaxSize,
+		maxPartitions:      defaultMaxPartitions,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -307,6 +322,7 @@ type storage struct {
 	writeTimeout       time.Duration
 	partitionMaxSize   int64
 	databaseMaxSize    int64
+	maxPartitions      int64
 
 	logger         Logger
 	workersLimitCh chan struct{}
@@ -486,23 +502,39 @@ func (s *storage) Close() error {
 
 func (s *storage) newPartition(p partition, punctuateWal bool) error {
 	if p == nil {
-		overSize, err := s.checkDBOverMaxSize()
-		if err != nil {
-			return fmt.Errorf("failed to check database maximum size: %w", err)
-		}
-
-		for overSize {
-			tail := s.partitionList.getTail()
-			s.partitionList.remove(tail)
-
-			overSize, err = s.checkDBOverMaxSize()
+		// Check for max database size
+		// Only when there are disk partitions, hence more than 2
+		if s.partitionList.size() > 2 {
+			overSize, err := s.checkDBOverMaxSize()
 			if err != nil {
 				return fmt.Errorf("failed to check database maximum size: %w", err)
 			}
+
+			for overSize {
+				tail := s.partitionList.getTail()
+				s.partitionList.remove(tail)
+
+				overSize, err = s.checkDBOverMaxSize()
+				if err != nil {
+					return fmt.Errorf("failed to check database maximum size: %w", err)
+				}
+			}
 		}
+
 		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision, s.partitionMaxSize)
 	}
 	s.partitionList.insert(p)
+
+	// Check for max partitions
+	// Only when there are disk partitions, hence more than 2
+	if s.partitionList.size() > 2 {
+		numPart := s.partitionList.size() - 2
+		for ; numPart > int(s.maxPartitions); numPart-- {
+			tail := s.partitionList.getTail()
+			s.partitionList.remove(tail)
+		}
+	}
+
 	if punctuateWal {
 		return s.wal.punctuate()
 	}
@@ -707,5 +739,5 @@ func (s *storage) recoverWAL(walDir string) error {
 }
 
 func (s *storage) inMemoryMode() bool {
-	return s.dataPath == ""
+	return s.dataPath == "" || s.maxPartitions == 0
 }
