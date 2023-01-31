@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nakabonne/tstorage/internal/cgroup"
-	"github.com/nakabonne/tstorage/internal/timerpool"
+	"github.com/Error404UsernameNotFound/tstorage/internal/cgroup"
+	"github.com/Error404UsernameNotFound/tstorage/internal/timerpool"
 )
 
 var (
