@@ -565,7 +565,7 @@ func (s *storage) checkDBOverMaxSize() (bool, error) {
 		return false, fmt.Errorf("failed to walk database directory: %w", err)
 	}
 
-	return size <= s.databaseMaxSize, err
+	return size > s.databaseMaxSize, err
 }
 
 // flushPartitions persists all in-memory partitions ready to persisted.
