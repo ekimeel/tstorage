@@ -527,7 +527,8 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 
 	// Check for max partitions
 	// Only when there are disk partitions, hence more than 2
-	if s.partitionList.size() > 2 {
+	// If in memory mode, innecesary
+	if !s.inMemoryMode() && s.partitionList.size() > 2 {
 		numPart := s.partitionList.size() - 2
 		for ; numPart > int(s.maxPartitions); numPart-- {
 			tail := s.partitionList.getTail()
