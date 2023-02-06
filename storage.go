@@ -486,10 +486,12 @@ func (s *storage) Close() error {
 		if err := s.newPartition(nil, true); err != nil {
 			return err
 		}
+
+		if err := s.flushPartitions(); err != nil {
+			return fmt.Errorf("failed to close storage: %w", err)
+		}
 	}
-	if err := s.flushPartitions(); err != nil {
-		return fmt.Errorf("failed to close storage: %w", err)
-	}
+
 	if err := s.removeExpiredPartitions(); err != nil {
 		return fmt.Errorf("failed to remove expired partitions: %w", err)
 	}
@@ -740,5 +742,5 @@ func (s *storage) recoverWAL(walDir string) error {
 }
 
 func (s *storage) inMemoryMode() bool {
-	return s.dataPath == "" || s.maxPartitions == 0
+	return s.dataPath == "" || s.maxPartitions == 0 || s.databaseMaxSize == 0
 }
