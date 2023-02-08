@@ -3,7 +3,6 @@ module github.com/Error404UsernameNotFound/tstorage
 go 1.17
 
 require (
-	github.com/DmitriyVTitov/size v1.5.0
 	github.com/stretchr/testify v1.7.0
 )
 

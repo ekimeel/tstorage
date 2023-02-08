@@ -6,20 +6,19 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/DmitriyVTitov/size"
 )
 
 // A memoryPartition implements a partition to store data points on heap.
 // It offers a goroutine safe capabilities.
 type memoryPartition struct {
-	// A hash map from metric name to memoryMetric.
-	metrics sync.Map
 	// The number of data points
 	numPoints int64
 	// minT is immutable.
 	minT int64
 	maxT int64
+
+	// A hash map from metric name to memoryMetric.
+	metrics sync.Map
 
 	// Write ahead log.
 	wal wal
@@ -28,7 +27,7 @@ type memoryPartition struct {
 	timestampPrecision TimestampPrecision
 	once               sync.Once
 
-	// Maximum size after which a partition gets persisted
+	// Maximum number of points after which a partition gets persisted
 	partitionMaxSize int64
 }
 
@@ -164,10 +163,7 @@ func (m *memoryPartition) active() bool {
 }
 
 func (m *memoryPartition) underMaxSize() bool {
-	// We will check the size of the variable containing the memoryPartition in memory
-	// TODO: Keep an eye on size.Of(), to see if it behaves as expected (test case, important)
-
-	return int64(size.Of(m)) < m.partitionMaxSize
+	return m.numPoints < m.partitionMaxSize
 }
 
 func (m *memoryPartition) clean() error {
@@ -182,10 +178,12 @@ func (m *memoryPartition) expired() bool {
 
 // memoryMetric has a list of ordered data points that belong to the memoryMetric
 type memoryMetric struct {
-	name         string
 	size         int64
 	minTimestamp int64
 	maxTimestamp int64
+
+	name string
+
 	// points must kept in order
 	points           []*DataPoint
 	outOfOrderPoints []*DataPoint
