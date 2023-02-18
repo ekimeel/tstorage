@@ -1,4 +1,6 @@
 name: release
+permissions: write-all
+
 on:
   workflow_dispatch:
   push:
@@ -12,7 +14,7 @@ on:
       - main
     paths:
       - 'RELEASE'
-      
+
 jobs:
   gh-release:
     runs-on: ubuntu-latest
