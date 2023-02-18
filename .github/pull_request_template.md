@@ -1,3 +1,7 @@
-## Updates
+## Breaking Changes
 
-## Notes
+## New Features
+
+## Notable Changes
+
+## Internal Changes
