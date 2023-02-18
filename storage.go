@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ekimeel/tstorage/internal/cgroup"
+	"github.com/ekimeel/tstorage/internal/timerpool"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
 	"os"
@@ -12,9 +15,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/ekimeel/tstorage/internal/cgroup"
-	"github.com/ekimeel/tstorage/internal/timerpool"
 )
 
 var (
@@ -187,7 +187,7 @@ func WithWriteTimeout(timeout time.Duration) Option {
 // WithLogger specifies the logger to emit verbose output.
 //
 // Defaults to a logger implementation that does nothing.
-func WithLogger(logger Logger) Option {
+func WithLogger(logger log.Logger) Option {
 	return func(s *storage) {
 		s.logger = logger
 	}
@@ -219,7 +219,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 		writeTimeout:       defaultWriteTimeout,
 		walBufferedSize:    defaultWALBufferedSize,
 		wal:                &nopWAL{},
-		logger:             &nopLogger{},
+		logger:             log.Logger{},
 		doneCh:             make(chan struct{}, 0),
 		partitionMaxSize:   defaultPartitionMaxSize,
 		databaseMaxSize:    defaultDatabaseMaxSize,
@@ -230,7 +230,10 @@ func NewStorage(opts ...Option) (Storage, error) {
 	}
 
 	if s.inMemoryMode() {
-		s.newPartition(nil, false)
+		err := s.newPartition(nil, false)
+		if err != nil {
+			log.Error(err)
+		}
 		return s, nil
 	}
 
@@ -254,7 +257,10 @@ func NewStorage(opts ...Option) (Storage, error) {
 		return nil, fmt.Errorf("failed to open data directory: %w", err)
 	}
 	if len(dirs) == 0 {
-		s.newPartition(nil, false)
+		err := s.newPartition(nil, false)
+		if err != nil {
+			log.Error(err)
+		}
 		return s, nil
 	}
 	isPartitionDir := func(f fs.DirEntry) bool {
@@ -283,13 +289,19 @@ func NewStorage(opts ...Option) (Storage, error) {
 		return partitions[i].minTimestamp() < partitions[j].minTimestamp()
 	})
 	for _, p := range partitions {
-		s.newPartition(p, false)
+		err := s.newPartition(p, false)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 	// Start WAL recovery if there is.
 	if err := s.recoverWAL(walDir); err != nil {
 		return nil, fmt.Errorf("failed to recover WAL: %w", err)
 	}
-	s.newPartition(nil, false)
+	err = s.newPartition(nil, false)
+	if err != nil {
+		log.Error(err)
+	}
 
 	// periodically check and permanently remove expired partitions.
 	go func() {
@@ -302,7 +314,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 			case <-ticker.C:
 				err := s.removeExpiredPartitions()
 				if err != nil {
-					s.logger.Printf("%v\n", err)
+					log.Error(err)
 				}
 			}
 		}
@@ -324,7 +336,7 @@ type storage struct {
 	databaseMaxSize    int64
 	maxPartitions      int64
 
-	logger         Logger
+	logger         log.Logger
 	workersLimitCh chan struct{}
 	// wg must be incremented to guarantee all writes are done gracefully.
 	wg sync.WaitGroup
@@ -514,7 +526,10 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 
 			for overSize {
 				tail := s.partitionList.getTail()
-				s.partitionList.remove(tail)
+				err = s.partitionList.remove(tail)
+				if err != nil {
+					log.Error(err)
+				}
 
 				overSize, err = s.checkDBOverMaxSize()
 				if err != nil {
@@ -534,7 +549,10 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 		numPart := s.partitionList.size() - 2
 		for ; numPart > int(s.maxPartitions); numPart-- {
 			tail := s.partitionList.getTail()
-			s.partitionList.remove(tail)
+			err := s.partitionList.remove(tail)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 
