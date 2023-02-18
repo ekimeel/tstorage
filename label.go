@@ -3,7 +3,7 @@ package tstorage
 import (
 	"sort"
 
-	"github.com/Error404UsernameNotFound/tstorage/internal/encoding"
+	"github.com/ekimeel/tstorage/internal/encoding"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Error404UsernameNotFound/tstorage"
+	"github.com/ekimeel/tstorage"
 )
 
 func ExampleNewStorage_withDataPath() {

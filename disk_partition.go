@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Error404UsernameNotFound/tstorage/internal/syscall"
+	"github.com/ekimeel/tstorage/internal/syscall"
 )
 
 const (
