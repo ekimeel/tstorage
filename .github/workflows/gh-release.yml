@@ -1,3 +1,4 @@
+name: release
 on:
   workflow_dispatch:
   push:
@@ -11,7 +12,7 @@ on:
       - main
     paths:
       - 'RELEASE'
-
+      
 jobs:
   gh-release:
     runs-on: ubuntu-latest
