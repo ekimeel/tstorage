@@ -1,1 +1,6 @@
-tag: v0.3.5
+tag: v0.3.6
+
+releaseNoteGenerator:
+  showAbbrevHash: true
+  showCommitter: true
+  useReleaseNoteBlock: true
