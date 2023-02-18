@@ -7,20 +7,22 @@ on:
     branches:
       - main
     paths:
-      - 'RELEASE'
+      - '**/RELEASE'
   pull_request:
     types: [opened, synchronize]
     branches:
       - main
     paths:
-      - 'RELEASE'
+      - '**/RELEASE'
 
 jobs:
   gh-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: pipe-cd/actions-gh-release@v2.1.0
+      - uses: actions/checkout@v3
         with:
-          release_file: 'RELEASE'
+          fetch-depth: 0
+      - uses: pipe-cd/actions-gh-release@v2.3.4
+        with:
+          release_file: '**/RELEASE'
           token: ${{ secrets.GITHUB_TOKEN }}
