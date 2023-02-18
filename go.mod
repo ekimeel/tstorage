@@ -1,6 +1,6 @@
-module github.com/Error404UsernameNotFound/tstorage
+module github.com/ekimeel/tstorage
 
-go 1.17
+go 1.19
 
 require (
 	github.com/stretchr/testify v1.7.0
