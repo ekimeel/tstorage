@@ -3,11 +3,10 @@ package tstorage_test
 import (
 	"errors"
 	"fmt"
+	"github.com/ekimeel/tstorage"
 	"os"
 	"sync"
 	"time"
-
-	"github.com/ekimeel/tstorage"
 )
 
 func ExampleNewStorage_withDataPath() {
