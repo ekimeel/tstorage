@@ -1,1 +1,17 @@
-tag: v0.3.6-c
+tag: v0.0.1
+
+commitCategories:
+  - title: "Breaking Changes"
+    contains:
+      - change-category/breaking-change
+  - title: "New Features"
+    contains:
+      - change-category/new-feature
+  - title: "Notable Changes"
+    contains:
+      - change-category/notable-change
+  - title: "Internal Changes"
+
+releaseNoteGenerator:
+  showCommitter: true
+  useReleaseNoteBlock: true
