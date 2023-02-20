@@ -1,3 +1,9 @@
+
+# Changes from original
+This is forked repository with changes based on specific needs.
+ - The concept of labels on metrics have been removed to simplify looks and sligly increase performance  
+ - Metrics are all based on uint32 and not string
+
 # tstorage [![Go Reference](https://pkg.go.dev/badge/mod/github.com/nakabonne/tstorage.svg)](https://pkg.go.dev/mod/github.com/nakabonne/tstorage)
 
 `tstorage` is a lightweight local on-disk storage engine for time-series data with a straightforward API.

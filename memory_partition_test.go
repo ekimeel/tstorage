@@ -10,7 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	metric0 = 0
+	metric1 = 1
+)
+
 func Test_memoryPartition_InsertRows(t *testing.T) {
+
 	tests := []struct {
 		name               string
 		memoryPartition    *memoryPartition
@@ -23,9 +29,9 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 			name:            "insert in-order rows",
 			memoryPartition: newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition),
 			rows: []Row{
-				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
-				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
-				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 3, Value: 0.1}},
+				{Metric: metric1, DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
+				{Metric: metric1, DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
+				{Metric: metric1, DataPoint: DataPoint{Timestamp: 3, Value: 0.1}},
 			},
 			wantDataPoints: []*DataPoint{
 				{Timestamp: 1, Value: 0.1},
@@ -39,18 +45,18 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 			memoryPartition: func() *memoryPartition {
 				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
-					{Metric: "metric1", DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
+					{Metric: metric1, DataPoint: DataPoint{Timestamp: 2, Value: 0.1}},
 				})
 				return m
 			}(),
 			rows: []Row{
-				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
+				{Metric: metric1, DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
 			},
 			wantDataPoints: []*DataPoint{
 				{Timestamp: 2, Value: 0.1},
 			},
 			wantOutOfOrderRows: []Row{
-				{Metric: "metric1", DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
+				{Metric: metric1, DataPoint: DataPoint{Timestamp: 1, Value: 0.1}},
 			},
 		},
 	}
@@ -60,7 +66,7 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.wantOutOfOrderRows, gotOutOfOrder)
 
-			got, _ := tt.memoryPartition.selectDataPoints("metric1", nil, 0, 4)
+			got, _ := tt.memoryPartition.selectDataPoints(metric1, 0, 4)
 			assert.Equal(t, tt.wantDataPoints, got)
 		})
 	}
@@ -69,8 +75,7 @@ func Test_memoryPartition_InsertRows(t *testing.T) {
 func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 	tests := []struct {
 		name            string
-		metric          string
-		labels          []Label
+		metric          uint32
 		start           int64
 		end             int64
 		memoryPartition *memoryPartition
@@ -78,7 +83,7 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 	}{
 		{
 			name:            "given non-exist metric name",
-			metric:          "unknown",
+			metric:          metric0,
 			start:           1,
 			end:             2,
 			memoryPartition: newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition),
@@ -86,30 +91,30 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 		},
 		{
 			name:   "select some points",
-			metric: "metric1",
+			metric: metric1,
 			start:  2,
 			end:    4,
 			memoryPartition: func() *memoryPartition {
 				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 1, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 2, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 3, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 4, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 5, Value: 0.1},
 					},
 				})
@@ -122,22 +127,22 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 		},
 		{
 			name:   "select all points",
-			metric: "metric1",
+			metric: metric1,
 			start:  1,
 			end:    4,
 			memoryPartition: func() *memoryPartition {
 				m := newMemoryPartition(nil, 0, "", math.MaxInt64).(*memoryPartition)
 				m.insertRows([]Row{
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 1, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 2, Value: 0.1},
 					},
 					{
-						Metric:    "metric1",
+						Metric:    metric1,
 						DataPoint: DataPoint{Timestamp: 3, Value: 0.1},
 					},
 				})
@@ -152,7 +157,7 @@ func Test_memoryPartition_SelectDataPoints(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := tt.memoryPartition.selectDataPoints(tt.metric, tt.labels, tt.start, tt.end)
+			got, _ := tt.memoryPartition.selectDataPoints(tt.metric, tt.start, tt.end)
 			assert.Equal(t, tt.want, got)
 		})
 	}

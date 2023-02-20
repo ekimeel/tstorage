@@ -70,18 +70,7 @@ type Reader interface {
 	// Select gives back a list of data points that matches a set of the given metric and
 	// labels within the given start-end range. Keep in mind that start is inclusive, end is exclusive,
 	// and both must be Unix timestamp. ErrNoDataPoints will be returned if no data points found.
-	Select(metric string, labels []Label, start, end int64) (points []*DataPoint, err error)
-}
-
-// Row includes a data point along with properties to identify a kind of metrics.
-type Row struct {
-	// The unique name of metric.
-	// This field must be set.
-	Metric string
-	// An optional key-value properties to further detailed identification.
-	Labels []Label
-	// This field must be set.
-	DataPoint
+	Select(metric uint32, start, end int64) (points []*DataPoint, err error)
 }
 
 // DataPoint represents a data point, the smallest unit of time series data.
@@ -441,8 +430,8 @@ func (s *storage) ensureHeadInSize() error {
 	return nil
 }
 
-func (s *storage) Select(metric string, labels []Label, start, end int64) ([]*DataPoint, error) {
-	if metric == "" {
+func (s *storage) Select(metric uint32, start, end int64) ([]*DataPoint, error) {
+	if metric == 0 {
 		return nil, fmt.Errorf("metric must be set")
 	}
 	if start >= end {
@@ -468,7 +457,7 @@ func (s *storage) Select(metric string, labels []Label, start, end int64) ([]*Da
 		if part.minTimestamp() > end {
 			continue
 		}
-		ps, err := part.selectDataPoints(metric, labels, start, end)
+		ps, err := part.selectDataPoints(metric, start, end)
 		if errors.Is(err, ErrNoDataPoints) {
 			continue
 		}
@@ -662,7 +651,7 @@ func (s *storage) flush(dirPath string, m *memoryPartition) error {
 	defer f.Close()
 	encoder := newSeriesEncoder(f)
 
-	metrics := map[string]diskMetric{}
+	metrics := map[uint32]diskMetric{}
 	m.metrics.Range(func(key, value interface{}) bool {
 		mt, ok := value.(*memoryMetric)
 		if !ok {

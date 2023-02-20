@@ -14,7 +14,7 @@ func (f *fakePartition) insertRows(_ []Row) ([]Row, error) {
 	return nil, f.err
 }
 
-func (f *fakePartition) selectDataPoints(_ string, _ []Label, _, _ int64) ([]*DataPoint, error) {
+func (f *fakePartition) selectDataPoints(_ uint32, _, _ int64) ([]*DataPoint, error) {
 	return nil, f.err
 }
 
