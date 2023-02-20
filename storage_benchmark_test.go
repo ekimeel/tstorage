@@ -12,7 +12,7 @@ func BenchmarkStorage_InsertRows(b *testing.B) {
 	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
 		storage.InsertRows([]Row{
-			{Metric: "metric1", DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
+			{Metric: metric1, DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
 		})
 	}
 }
@@ -23,12 +23,12 @@ func BenchmarkStorage_SelectAmongThousandPoints(b *testing.B) {
 	require.NoError(b, err)
 	for i := 1; i < 1000; i++ {
 		storage.InsertRows([]Row{
-			{Metric: "metric1", DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
+			{Metric: metric1, DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
 		})
 	}
 	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
-		_, _ = storage.Select("metric1", nil, 10, 100)
+		_, _ = storage.Select(metric1, 10, 100)
 	}
 }
 
@@ -38,11 +38,11 @@ func BenchmarkStorage_SelectAmongMillionPoints(b *testing.B) {
 	require.NoError(b, err)
 	for i := 1; i < 1000000; i++ {
 		storage.InsertRows([]Row{
-			{Metric: "metric1", DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
+			{Metric: metric1, DataPoint: DataPoint{Timestamp: int64(i), Value: 0.1}},
 		})
 	}
 	b.ResetTimer()
 	for i := 1; i < b.N; i++ {
-		_, _ = storage.Select("metric1", nil, 10, 100)
+		_, _ = storage.Select(metric1, 10, 100)
 	}
 }

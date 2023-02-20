@@ -64,15 +64,15 @@ func (w *diskWAL) append(op walOperation, rows []Row) error {
 			if err := w.w.WriteByte(byte(op)); err != nil {
 				return fmt.Errorf("failed to write operation: %w", err)
 			}
-			name := marshalMetricName(row.Metric, row.Labels)
+			name := row.Metric
 			// Write the length of the metric name
 			lBuf := make([]byte, binary.MaxVarintLen64)
-			n := binary.PutUvarint(lBuf, uint64(len(name)))
+			n := binary.PutUvarint(lBuf, uint64(name))
 			if _, err := w.w.Write(lBuf[:n]); err != nil {
 				return fmt.Errorf("failed to write the length of the metric name: %w", err)
 			}
 			// Write the metric name
-			if _, err := w.w.WriteString(name); err != nil {
+			if _, err := w.w.WriteString(fmt.Sprint(name)); err != nil {
 				return fmt.Errorf("failed to write the metric name: %w", err)
 			}
 			// Write the timestamp
@@ -285,10 +285,17 @@ func (f *segment) next() bool {
 			f.err = fmt.Errorf("failed to read value: %w", err)
 			return false
 		}
+
+		m, err := strconv.Atoi(string(metric))
+		if err != nil {
+			f.err = fmt.Errorf("failed to read value: %w", err)
+			return false
+		}
+
 		f.current = walRecord{
 			op: walOperation(op),
 			row: Row{
-				Metric: string(metric),
+				Metric: uint32(m),
 				DataPoint: DataPoint{
 					Timestamp: ts,
 					Value:     math.Float64frombits(val),

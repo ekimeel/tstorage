@@ -42,13 +42,13 @@ type meta struct {
 	MinTimestamp  int64                 `json:"minTimestamp"`
 	MaxTimestamp  int64                 `json:"maxTimestamp"`
 	NumDataPoints int                   `json:"numDataPoints"`
-	Metrics       map[string]diskMetric `json:"metrics"`
+	Metrics       map[uint32]diskMetric `json:"metrics"`
 	CreatedAt     time.Time             `json:"createdAt"`
 }
 
 // diskMetric holds meta data to access actual data from the memory-mapped file.
 type diskMetric struct {
-	Name          string `json:"name"`
+	Name          uint32 `json:"name"`
 	Offset        int64  `json:"offset"`
 	MinTimestamp  int64  `json:"minTimestamp"`
 	MaxTimestamp  int64  `json:"maxTimestamp"`
@@ -109,12 +109,11 @@ func (d *diskPartition) insertRows(_ []Row) ([]Row, error) {
 	return nil, fmt.Errorf("can't insert rows into disk partition")
 }
 
-func (d *diskPartition) selectDataPoints(metric string, labels []Label, start, end int64) ([]*DataPoint, error) {
+func (d *diskPartition) selectDataPoints(metric uint32, start, end int64) ([]*DataPoint, error) {
 	if d.expired() {
 		return nil, fmt.Errorf("this partition is expired: %w", ErrNoDataPoints)
 	}
-	name := marshalMetricName(metric, labels)
-	mt, ok := d.meta.Metrics[name]
+	mt, ok := d.meta.Metrics[metric]
 	if !ok {
 		return nil, ErrNoDataPoints
 	}
@@ -124,7 +123,7 @@ func (d *diskPartition) selectDataPoints(metric string, labels []Label, start, e
 	}
 	decoder, err := newSeriesDecoder(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate decoder for metric %q in %q: %w", name, d.dirPath, err)
+		return nil, fmt.Errorf("failed to generate decoder for metric %d in %q: %w", metric, d.dirPath, err)
 	}
 
 	// TODO: Divide fixed-lengh chunks when flushing, and index it.
@@ -132,7 +131,7 @@ func (d *diskPartition) selectDataPoints(metric string, labels []Label, start, e
 	for i := 0; i < int(mt.NumDataPoints); i++ {
 		point := &DataPoint{}
 		if err := decoder.decodePoint(point); err != nil {
-			return nil, fmt.Errorf("failed to decode point of metric %q in %q: %w", name, d.dirPath, err)
+			return nil, fmt.Errorf("failed to decode point of metric %d in %q: %w", metric, d.dirPath, err)
 		}
 		if point.Timestamp < start {
 			continue

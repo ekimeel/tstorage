@@ -95,8 +95,7 @@ func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 		if row.Timestamp > maxTimestamp {
 			maxTimestamp = row.Timestamp
 		}
-		name := marshalMetricName(row.Metric, row.Labels)
-		mt := m.getMetric(name)
+		mt := m.getMetric(row.Metric)
 		mt.insertPoint(&row.DataPoint)
 		rowsNum++
 	}
@@ -125,15 +124,14 @@ func toUnix(t time.Time, precision TimestampPrecision) int64 {
 	}
 }
 
-func (m *memoryPartition) selectDataPoints(metric string, labels []Label, start, end int64) ([]*DataPoint, error) {
-	name := marshalMetricName(metric, labels)
-	mt := m.getMetric(name)
+func (m *memoryPartition) selectDataPoints(metric uint32, start, end int64) ([]*DataPoint, error) {
+	mt := m.getMetric(metric)
 	return mt.selectPoints(start, end), nil
 }
 
 // getMetric gives back the reference to the metrics list whose name is the given one.
 // If none, it creates a new one.
-func (m *memoryPartition) getMetric(name string) *memoryMetric {
+func (m *memoryPartition) getMetric(name uint32) *memoryMetric {
 	value, ok := m.metrics.Load(name)
 	if !ok {
 		value = &memoryMetric{
@@ -182,7 +180,7 @@ type memoryMetric struct {
 	minTimestamp int64
 	maxTimestamp int64
 
-	name string
+	name uint32
 
 	// points must kept in order
 	points           []*DataPoint

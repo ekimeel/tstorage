@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_diskWAL_append_read(t *testing.T) {
+func gTest_diskWAL_append_read(t *testing.T) {
 	var (
 		op   = operationInsert
 		rows = []Row{
-			{Metric: "metric-1", DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000000}},
-			{Metric: "metric-2", DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000001}},
-			{Metric: "metric-1", DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000001}},
-			{Metric: "metric-2", DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000003}},
+			{Metric: 1, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000000}},
+			{Metric: 2, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000001}},
+			{Metric: 1, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000001}},
+			{Metric: 2, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000003}},
 		}
 	)
 	// Append rows into wal

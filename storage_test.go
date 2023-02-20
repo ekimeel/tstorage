@@ -12,8 +12,7 @@ func Test_storage_Select(t *testing.T) {
 	tests := []struct {
 		name    string
 		storage storage
-		metric  string
-		labels  []Label
+		metric  uint32
 		start   int64
 		end     int64
 		want    []*DataPoint
@@ -21,15 +20,15 @@ func Test_storage_Select(t *testing.T) {
 	}{
 		{
 			name:   "select from single partition",
-			metric: "metric1",
+			metric: metric1,
 			start:  1,
 			end:    4,
 			storage: func() storage {
 				part1 := newMemoryPartition(nil, 1*time.Hour, Seconds, math.MaxInt64)
 				_, err := part1.insertRows([]Row{
-					{DataPoint: DataPoint{Timestamp: 1}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 2}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 3}, Metric: "metric1"},
+					{DataPoint: DataPoint{Timestamp: 1}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 2}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 3}, Metric: metric1},
 				})
 				if err != nil {
 					panic(err)
@@ -49,33 +48,33 @@ func Test_storage_Select(t *testing.T) {
 		},
 		{
 			name:   "select from three partitions",
-			metric: "metric1",
+			metric: metric1,
 			start:  1,
 			end:    10,
 			storage: func() storage {
 				part1 := newMemoryPartition(nil, 1*time.Hour, Seconds, math.MaxInt64)
 				_, err := part1.insertRows([]Row{
-					{DataPoint: DataPoint{Timestamp: 1}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 2}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 3}, Metric: "metric1"},
+					{DataPoint: DataPoint{Timestamp: 1}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 2}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 3}, Metric: metric1},
 				})
 				if err != nil {
 					panic(err)
 				}
 				part2 := newMemoryPartition(nil, 1*time.Hour, Seconds, math.MaxInt64)
 				_, err = part2.insertRows([]Row{
-					{DataPoint: DataPoint{Timestamp: 4}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 5}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 6}, Metric: "metric1"},
+					{DataPoint: DataPoint{Timestamp: 4}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 5}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 6}, Metric: metric1},
 				})
 				if err != nil {
 					panic(err)
 				}
 				part3 := newMemoryPartition(nil, 1*time.Hour, Seconds, math.MaxInt64)
 				_, err = part3.insertRows([]Row{
-					{DataPoint: DataPoint{Timestamp: 7}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 8}, Metric: "metric1"},
-					{DataPoint: DataPoint{Timestamp: 9}, Metric: "metric1"},
+					{DataPoint: DataPoint{Timestamp: 7}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 8}, Metric: metric1},
+					{DataPoint: DataPoint{Timestamp: 9}, Metric: metric1},
 				})
 				if err != nil {
 					panic(err)
@@ -105,7 +104,7 @@ func Test_storage_Select(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.storage.Select(tt.metric, tt.labels, tt.start, tt.end)
+			got, err := tt.storage.Select(tt.metric, tt.start, tt.end)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.want, got)
