@@ -13,6 +13,7 @@ import (
 const (
 	metric0 = 0
 	metric1 = 1
+	metric2 = 2
 )
 
 func Test_memoryPartition_InsertRows(t *testing.T) {

@@ -1,8 +1,10 @@
 
 # Changes from original
 This is forked repository with changes based on specific needs.
- - The concept of labels on metrics have been removed to simplify looks and sligly increase performance  
- - Metrics are all based on uint32 and not string
+ - Metrics are based on unique uint32 identifiers and not strings.
+ - The concept of labels on metrics have been removed. Labels should be handled outside of this library.
+ - A new Last Known Observation (LKO) storage strategy is used to optimize heavy reads on the current value of a metric. This is enabled by default but can be disabled using the WithoutLkoStorage option.
+
 
 # tstorage [![Go Reference](https://pkg.go.dev/badge/mod/github.com/nakabonne/tstorage.svg)](https://pkg.go.dev/mod/github.com/nakabonne/tstorage)
 

@@ -111,3 +111,27 @@ func Test_storage_Select(t *testing.T) {
 		})
 	}
 }
+
+func TestStorage_Poll(t *testing.T) {
+	storage, err := NewStorage(
+		WithTimestampPrecision(Seconds),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := storage.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	err = storage.InsertRows([]Row{
+		{Metric: metric1, DataPoint: DataPoint{Timestamp: 1600000000, Value: 0.1}},
+		{Metric: metric1, DataPoint: DataPoint{Timestamp: 1600000002, Value: 0.2}},
+		{Metric: metric1, DataPoint: DataPoint{Timestamp: 1600000001, Value: 0.3}},
+		{Metric: metric1, DataPoint: DataPoint{Timestamp: 1600000003, Value: 0.4}},
+		{Metric: metric2, DataPoint: DataPoint{Timestamp: 1600000004, Value: 0.5}},
+	})
+
+	d := storage.Poll(metric1)
+	assert.Equal(t, 0.4, d.Value)
+}
