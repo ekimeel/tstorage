@@ -32,6 +32,7 @@ type diskWAL struct {
 	fd    *os.File
 	index uint32
 	mu    sync.Mutex
+	last  map[uint32]*DataPoint
 }
 
 func newDiskWAL(dir string, bufferedSize int) (wal, error) {
@@ -48,6 +49,7 @@ func newDiskWAL(dir string, bufferedSize int) (wal, error) {
 	}
 	w.fd = f
 	w.w = bufio.NewWriterSize(f, bufferedSize)
+	w.last = make(map[uint32]*DataPoint)
 
 	return w, nil
 }
@@ -60,6 +62,7 @@ func (w *diskWAL) append(op walOperation, rows []Row) error {
 	switch op {
 	case operationInsert:
 		for _, row := range rows {
+
 			// Write the operation type
 			if err := w.w.WriteByte(byte(op)); err != nil {
 				return fmt.Errorf("failed to write operation: %w", err)
@@ -87,6 +90,12 @@ func (w *diskWAL) append(op walOperation, rows []Row) error {
 			if _, err := w.w.Write(vBuf[:n]); err != nil {
 				return fmt.Errorf("failed to write the value: %w", err)
 			}
+
+			w.last[row.Metric] = &DataPoint{
+				Timestamp: row.Timestamp,
+				Value:     row.Value,
+			}
+
 		}
 	default:
 		return fmt.Errorf("unknown operation %v given", op)

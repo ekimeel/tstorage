@@ -6,11 +6,15 @@ type fakePartition struct {
 	numPoints        int
 	IsActive         bool
 	partitionMaxSize bool
-
-	err error
+	last             map[uint32]*DataPoint
+	lko              lkoStorage
+	err              error
 }
 
-func (f *fakePartition) insertRows(_ []Row) ([]Row, error) {
+func (f *fakePartition) insertRows(rows []Row) ([]Row, error) {
+	for _, row := range rows {
+		f.lko.acceptRow(row)
+	}
 	return nil, f.err
 }
 

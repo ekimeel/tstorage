@@ -68,11 +68,13 @@ func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 		return nil, fmt.Errorf("failed to write to WAL: %w", err)
 	}
 
+	lko := getLkoStorage()
 	// Set min timestamp at only first.
 	m.once.Do(func() {
 		min := rows[0].Timestamp
 		for i := range rows {
 			row := rows[i]
+			lko.accept(row.Metric, &row.DataPoint)
 			if row.Timestamp < min {
 				min = row.Timestamp
 			}
@@ -131,15 +133,15 @@ func (m *memoryPartition) selectDataPoints(metric uint32, start, end int64) ([]*
 
 // getMetric gives back the reference to the metrics list whose name is the given one.
 // If none, it creates a new one.
-func (m *memoryPartition) getMetric(name uint32) *memoryMetric {
-	value, ok := m.metrics.Load(name)
+func (m *memoryPartition) getMetric(id uint32) *memoryMetric {
+	value, ok := m.metrics.Load(id)
 	if !ok {
 		value = &memoryMetric{
-			name:             name,
+			name:             id,
 			points:           make([]*DataPoint, 0, 1000),
 			outOfOrderPoints: make([]*DataPoint, 0),
 		}
-		m.metrics.Store(name, value)
+		m.metrics.Store(id, value)
 	}
 	return value.(*memoryMetric)
 }
@@ -189,6 +191,7 @@ type memoryMetric struct {
 }
 
 func (m *memoryMetric) insertPoint(point *DataPoint) {
+
 	size := atomic.LoadInt64(&m.size)
 	// TODO: Consider to stop using mutex every time.
 	//   Instead, fix the capacity of points slice, kind of like:

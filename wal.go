@@ -33,7 +33,12 @@ type nopWAL struct {
 	mu       sync.Mutex
 }
 
-func (f *nopWAL) append(_ walOperation, _ []Row) error {
+func newNopWal() *nopWAL {
+	n := &nopWAL{}
+	return n
+}
+
+func (f *nopWAL) append(_ walOperation, rows []Row) error {
 	return nil
 }
 
