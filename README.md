@@ -6,6 +6,7 @@ This is forked repository with changes based on specific needs.
  - A new Last Known Observation (LKO) storage strategy is used to optimize heavy reads on the current value of a metric. This is enabled by default but can be disabled using the WithoutLkoStorage option.
  - Project layout has changed slightly by moving some structs into their own file for more separation of concerns.
 
+credit to: github.com/nakabonne/tstorage
 
 # tstorage [![Go Reference](https://pkg.go.dev/badge/mod/github.com/nakabonne/tstorage.svg)](https://pkg.go.dev/mod/github.com/nakabonne/tstorage)
 
@@ -30,8 +31,7 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/nakabonne/tstorage"
+	"github.com/ekimeel/tstorage"
 )
 
 func main() {
@@ -42,11 +42,11 @@ func main() {
 
 	_ = storage.InsertRows([]tstorage.Row{
 		{
-			Metric: "metric1",
+			Metric: 1,
 			DataPoint: tstorage.DataPoint{Timestamp: 1600000000, Value: 0.1},
 		},
 	})
-	points, _ := storage.Select("metric1", nil, 1600000000, 1600000001)
+	points, _ := storage.Select(1, 1600000000, 1600000001)
 	for _, p := range points {
 		fmt.Printf("timestamp: %v, value: %v\n", p.Timestamp, p.Value)
 		// => timestamp: 1600000000, value: 0.1
@@ -64,25 +64,6 @@ storage, _ := tstorage.NewStorage(
 defer storage.Close()
 ```
 
-### Labeled metrics
-In tstorage, you can identify a metric with combination of metric name and optional labels.
-Here is an example of insertion a labeled metric to the disk.
-
-```go
-metric := "mem_alloc_bytes"
-labels := []tstorage.Label{
-	{Name: "host", Value: "host-1"},
-}
-
-_ = storage.InsertRows([]tstorage.Row{
-	{
-		Metric:    metric,
-		Labels:    labels,
-		DataPoint: tstorage.DataPoint{Timestamp: 1600000000, Value: 0.1},
-	},
-})
-points, _ := storage.Select(metric, labels, 1600000000, 1600000001)
-```
 
 For more examples see [the documentation](https://pkg.go.dev/github.com/nakabonne/tstorage#pkg-examples).
 
@@ -117,12 +98,12 @@ Each partition acts as a fully independent database containing all data points f
 
 
 ```
-  │                 │
-Read              Write
-  │                 │
+  │                 │           ┌──────────────────────┐
+Read              Write ├──────> Last Known Observation 
+  │                 │           └──────────────────────┘
   │                 V
   │      ┌───────────────────┐ max: 1600010800
-  ├─────>   Memory Partition
+  ├─────>   Memory Partition    
   │      └───────────────────┘ min: 1600007201
   │
   │      ┌───────────────────┐ max: 1600007200
@@ -135,9 +116,12 @@ Read              Write
 ```
 
 Key benefits:
-- We can easily ignore all data outside of the partition time range when querying data points.
+- We can easily ignore all data outside the partition time range when querying data points.
 - Most read operations work fast because recent data get cached in heap.
 - When a partition gets full, we can persist the data from our in-memory database by sequentially writing just a handful of larger files. We avoid any write-amplification and serve SSDs and HDDs equally well.
+
+### Last Known Observation (LKO)
+The Last Known Observation is a memory allocation that holds the last know value for every metric during life of the storage. The LKO is ideal when you need frequently access to the most recent value and timestamp for every metric. The LKO is written during insertion into head memory partition and does create a small amount of additional overhead and memory usage. If you do not need frequent access to the last know value for every metric you can turn LKO off during instantiation of storage with the WithoutLkoStorage option. 
 
 ### Memory partition
 The memory partition is writable and stores data points in heap. The head partition is always memory partition. Its next one is also memory partition to accept out-of-order data points.
