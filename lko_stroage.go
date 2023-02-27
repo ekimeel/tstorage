@@ -1,13 +1,11 @@
 package tstorage
 
-import "sync"
-
 var lkoImpl *lkoStorage
 
 type lkoStorage struct {
 	lko      map[uint32]*DataPoint
 	disabled bool
-	sync.RWMutex
+	//sync.RWMutex
 }
 
 func getLkoStorage() *lkoStorage {
@@ -23,8 +21,8 @@ func (s *lkoStorage) poll(metric uint32) *DataPoint {
 	if s.disabled {
 		return nil
 	}
-	s.RLock()
-	defer s.RUnlock()
+	//s.RLock()
+	//defer s.RUnlock()
 	return s.lko[metric]
 }
 
@@ -39,15 +37,15 @@ func (s *lkoStorage) accept(metric uint32, point *DataPoint) bool {
 
 	cur := s.lko[metric]
 	if cur == nil {
-		s.Lock()
+		//s.Lock()
 		s.lko[metric] = point
-		defer s.Unlock()
+		//defer s.Unlock()
 		return true
 	} else {
 		if point.Timestamp > cur.Timestamp {
-			s.Lock()
+			//s.Lock()
 			s.lko[metric] = point
-			defer s.Unlock()
+			//defer s.Unlock()
 			return true
 		}
 	}
