@@ -8,6 +8,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type mockEncoder struct {
+	encodePointFunc func(*DataPoint) error
+	flushFunc       func() error
+}
+
+func (f *mockEncoder) encodePoint(p *DataPoint) error {
+	if f.encodePointFunc == nil {
+		return nil
+	}
+	return f.encodePointFunc(p)
+}
+
+func (f *mockEncoder) flush() error {
+	if f.flushFunc == nil {
+		return nil
+	}
+	return f.flushFunc()
+}
+
 func Test_gorillaEncoder_encodePoint_decodePoint(t *testing.T) {
 	tests := []struct {
 		name                string

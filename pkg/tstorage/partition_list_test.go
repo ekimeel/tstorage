@@ -23,13 +23,13 @@ func Test_partitionList_Remove(t *testing.T) {
 			name: "remove the head node",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -40,18 +40,18 @@ func Test_partitionList_Remove(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			target: &fakePartition{
+			target: &mockPartition{
 				minT: 1,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 1,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				},
@@ -61,13 +61,13 @@ func Test_partitionList_Remove(t *testing.T) {
 			name: "remove the tail node",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -78,18 +78,18 @@ func Test_partitionList_Remove(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			target: &fakePartition{
+			target: &mockPartition{
 				minT: 2,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 1,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 				},
@@ -99,18 +99,18 @@ func Test_partitionList_Remove(t *testing.T) {
 			name: "remove the middle node",
 			partitionList: func() partitionListImpl {
 				third := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 3,
 					},
 				}
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 					next: third,
 				}
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -121,23 +121,23 @@ func Test_partitionList_Remove(t *testing.T) {
 					tail:          third,
 				}
 			}(),
-			target: &fakePartition{
+			target: &mockPartition{
 				minT: 2,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 2,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: &partitionNode{
-						val: &fakePartition{
+						val: &mockPartition{
 							minT: 3,
 						},
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 3,
 					},
 				},
@@ -147,13 +147,13 @@ func Test_partitionList_Remove(t *testing.T) {
 			name: "given node not found",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -164,18 +164,18 @@ func Test_partitionList_Remove(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			target: &fakePartition{
+			target: &mockPartition{
 				minT: 3,
 			},
 			wantPartitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -216,13 +216,13 @@ func Test_partitionList_Swap(t *testing.T) {
 			name: "swap the head node",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -233,26 +233,26 @@ func Test_partitionList_Swap(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			old: &fakePartition{
+			old: &mockPartition{
 				minT: 1,
 			},
-			new: &fakePartition{
+			new: &mockPartition{
 				minT: 100,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 2,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 100,
 					},
 					next: &partitionNode{
-						val: &fakePartition{
+						val: &mockPartition{
 							minT: 2,
 						},
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				},
@@ -262,13 +262,13 @@ func Test_partitionList_Swap(t *testing.T) {
 			name: "swap the tail node",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -279,26 +279,26 @@ func Test_partitionList_Swap(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			old: &fakePartition{
+			old: &mockPartition{
 				minT: 2,
 			},
-			new: &fakePartition{
+			new: &mockPartition{
 				minT: 100,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 2,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: &partitionNode{
-						val: &fakePartition{
+						val: &mockPartition{
 							minT: 100,
 						},
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 100,
 					},
 				},
@@ -308,19 +308,19 @@ func Test_partitionList_Swap(t *testing.T) {
 			name: "swap the middle node",
 			partitionList: func() partitionListImpl {
 				third := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 3,
 					},
 				}
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 					next: third,
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -331,31 +331,31 @@ func Test_partitionList_Swap(t *testing.T) {
 					tail:          third,
 				}
 			}(),
-			old: &fakePartition{
+			old: &mockPartition{
 				minT: 2,
 			},
-			new: &fakePartition{
+			new: &mockPartition{
 				minT: 100,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 3,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: &partitionNode{
-						val: &fakePartition{
+						val: &mockPartition{
 							minT: 100,
 						},
 						next: &partitionNode{
-							val: &fakePartition{
+							val: &mockPartition{
 								minT: 3,
 							},
 						},
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 3,
 					},
 				},
@@ -365,13 +365,13 @@ func Test_partitionList_Swap(t *testing.T) {
 			name: "given node not found",
 			partitionList: func() partitionListImpl {
 				second := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				}
 
 				first := &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: second,
@@ -382,23 +382,23 @@ func Test_partitionList_Swap(t *testing.T) {
 					tail:          second,
 				}
 			}(),
-			old: &fakePartition{
+			old: &mockPartition{
 				minT: 100,
 			},
 			wantPartitionList: partitionListImpl{
 				numPartitions: 2,
 				head: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 1,
 					},
 					next: &partitionNode{
-						val: &fakePartition{
+						val: &mockPartition{
 							minT: 2,
 						},
 					},
 				},
 				tail: &partitionNode{
-					val: &fakePartition{
+					val: &mockPartition{
 						minT: 2,
 					},
 				},

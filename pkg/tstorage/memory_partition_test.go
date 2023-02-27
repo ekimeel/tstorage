@@ -176,7 +176,7 @@ func Test_memoryMetric_EncodeAllPoints_sorted(t *testing.T) {
 		},
 	}
 	allTimestamps := make([]int64, 0, 4)
-	encoder := fakeEncoder{
+	encoder := mockEncoder{
 		encodePointFunc: func(p *DataPoint) error {
 			allTimestamps = append(allTimestamps, p.Timestamp)
 			return nil
@@ -191,7 +191,7 @@ func Test_memoryMetric_EncodeAllPoints_error(t *testing.T) {
 	mt := memoryMetric{
 		points: []*DataPoint{{Timestamp: 1, Value: 0.1}},
 	}
-	encoder := fakeEncoder{
+	encoder := mockEncoder{
 		encodePointFunc: func(p *DataPoint) error {
 			return fmt.Errorf("some error")
 		},
