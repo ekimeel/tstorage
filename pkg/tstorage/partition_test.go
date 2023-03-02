@@ -7,7 +7,7 @@ type mockPartition struct {
 	IsActive         bool
 	partitionMaxSize bool
 	last             map[uint32]*DataPoint
-	lko              lkoStorage
+	lko              lko
 	err              error
 }
 
