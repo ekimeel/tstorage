@@ -132,6 +132,9 @@ func TestStorage_Poll(t *testing.T) {
 		{Metric: metric2, DataPoint: DataPoint{Timestamp: 1600000004, Value: 0.5}},
 	})
 
-	d := storage.Poll(metric1)
-	assert.Equal(t, 0.4, d.Value)
+	p1 := storage.Poll(metric1)
+	assert.Equal(t, 0.4, p1.Value)
+
+	p2 := storage.Poll(metric2)
+	assert.Equal(t, 0.5, p2.Value)
 }

@@ -6,13 +6,13 @@ import (
 )
 
 func Test_getLkoStorage_signleton(t *testing.T) {
-	a := getLkoStorage()
-	b := getLkoStorage()
+	a := getLko()
+	b := getLko()
 	assert.Equal(t, a, b)
 }
 
 func Test_LkoStorage_poll(t *testing.T) {
-	s := getLkoStorage()
+	s := getLko()
 
 	s.accept(metric1, &DataPoint{Timestamp: 100, Value: 100})
 	s.accept(metric1, &DataPoint{Timestamp: 99, Value: 99})

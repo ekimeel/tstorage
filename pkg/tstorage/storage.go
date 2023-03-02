@@ -219,8 +219,6 @@ type storage struct {
 	wg sync.WaitGroup
 
 	doneCh chan struct{}
-
-	lko lkoStorage
 }
 
 func (s *storage) InsertRows(rows []Row) error {
@@ -365,7 +363,7 @@ func (s *storage) Select(metric uint32, start, end int64) ([]*DataPoint, error) 
 }
 
 func (w *storage) Poll(metric uint32) *DataPoint {
-	return getLkoStorage().poll(metric)
+	return getLko().poll(metric)
 }
 
 func (s *storage) Close() error {

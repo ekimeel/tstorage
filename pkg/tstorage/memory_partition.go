@@ -2,6 +2,7 @@ package tstorage
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -59,16 +60,14 @@ func newMemoryPartition(wal wal, partitionDuration time.Duration, precision Time
 // insertRows inserts the given rows to partition.
 func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 	if len(rows) == 0 {
-		return nil, fmt.Errorf("no rows given")
+		log.Warnf(warnNoRows)
 	}
-	// FIXME: Just emitting log is enoughAlex Edwards - Let's Go
-
 	err := m.wal.append(operationInsert, rows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write to WAL: %w", err)
 	}
 
-	lko := getLkoStorage()
+	lko := getLko()
 	// Set min timestamp at only first.
 	m.once.Do(func() {
 		min := rows[0].Timestamp
@@ -87,6 +86,7 @@ func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 	var rowsNum int64
 	for i := range rows {
 		row := rows[i]
+		lko.accept(row.Metric, &row.DataPoint)
 		if row.Timestamp < m.minTimestamp() {
 			outdatedRows = append(outdatedRows, row)
 			continue
