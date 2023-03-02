@@ -1,6 +1,8 @@
 package tstorage
 
-import "sync"
+import (
+	"sync"
+)
 
 var lkoImpl *lko
 

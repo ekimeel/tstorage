@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-func Test_getLkoStorage_signleton(t *testing.T) {
+func Test_getLko_signleton(t *testing.T) {
 	a := getLko()
 	b := getLko()
 	assert.Equal(t, a, b)
 }
 
-func Test_LkoStorage_poll(t *testing.T) {
+func Test_Lko_poll(t *testing.T) {
 	s := getLko()
 
 	s.accept(metric1, &DataPoint{Timestamp: 100, Value: 100})
