@@ -123,13 +123,13 @@ func WithWALBufferedSize(size int) Option {
 // to store the last known observation for every metric.
 func WithoutLkoStorage() Option {
 	return func(s *storage) {
-		s.lko.disabled = true
-		s.lko.clear()
+		getLko().disabled = true
+		getLko().clear()
 	}
 }
 
 func WithLkoStorage() Option {
 	return func(s *storage) {
-		s.lko.disabled = false
+		getLko().disabled = false
 	}
 }
