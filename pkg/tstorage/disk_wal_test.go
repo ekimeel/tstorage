@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func gTest_diskWAL_append_read(t *testing.T) {
+func Test_diskWAL_append_read(t *testing.T) {
 	var (
 		op   = operationInsert
 		rows = []Row{
-			{Metric: 1, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000000}},
-			{Metric: 2, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000001}},
-			{Metric: 1, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000001}},
-			{Metric: 2, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000003}},
+			{Metric: 3, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000000}},
+			{Metric: 4, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000001}},
+			{Metric: 3, DataPoint: DataPoint{Value: 0.1, Timestamp: 1600000001}},
+			{Metric: 4, DataPoint: DataPoint{Value: 0.2, Timestamp: 1600000003}},
 		}
 	)
 	// Append rows into wal
@@ -45,7 +45,7 @@ func gTest_diskWAL_append_read(t *testing.T) {
 	// Recover rows.
 	reader, err := newDiskWALReader(path)
 	require.NoError(t, err)
-	err = reader.readAll()
+	err = reader.readAll(TolerateCorruptedTailRecords)
 	require.NoError(t, err)
 	got := reader.rowsToInsert
 	assert.Equal(t, rows, got)

@@ -204,6 +204,7 @@ type storage struct {
 
 	walBufferedSize    int
 	wal                wal
+	walRecoveryOption  WalRecoveryOption
 	partitionDuration  time.Duration
 	retention          time.Duration
 	timestampPrecision TimestampPrecision
@@ -628,7 +629,8 @@ func (s *storage) recoverWAL(walDir string) error {
 		return err
 	}
 
-	if err := reader.readAll(); err != nil {
+	if err := reader.readAll(s.walRecoveryOption); err != nil {
+		log.Errorf("failed to read WAL: %s", err)
 		return fmt.Errorf("failed to read WAL: %w", err)
 	}
 
@@ -636,6 +638,7 @@ func (s *storage) recoverWAL(walDir string) error {
 		return nil
 	}
 	if err := s.InsertRows(reader.rowsToInsert); err != nil {
+		log.Errorf("failed to insert rows recovered from WAL: %s", err)
 		return fmt.Errorf("failed to insert rows recovered from WAL: %w", err)
 	}
 	return s.wal.refresh()

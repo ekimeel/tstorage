@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
 	"math"
@@ -14,6 +15,13 @@ import (
 	"sync"
 	"sync/atomic"
 )
+
+var corruptedWalRecord = walRecord{
+	op: corrupted,
+	row: Row{
+		Metric:    0,
+		DataPoint: DataPoint{Timestamp: 0, Value: 0},
+	}}
 
 // diskWAL contains multiple segment files. One segment is responsible for one partition.
 // They can be easily sorted because they are named using the created timestamp.
@@ -67,16 +75,11 @@ func (w *diskWAL) append(op walOperation, rows []Row) error {
 			if err := w.w.WriteByte(byte(op)); err != nil {
 				return fmt.Errorf("failed to write operation: %w", err)
 			}
-			name := row.Metric
-			// Write the length of the metric name
-			lBuf := make([]byte, binary.MaxVarintLen64)
-			n := binary.PutUvarint(lBuf, uint64(name))
-			if _, err := w.w.Write(lBuf[:n]); err != nil {
-				return fmt.Errorf("failed to write the length of the metric name: %w", err)
-			}
-			// Write the metric name
-			if _, err := w.w.WriteString(fmt.Sprint(name)); err != nil {
-				return fmt.Errorf("failed to write the metric name: %w", err)
+			// Write the metric
+			mBuf := make([]byte, binary.MaxVarintLen64)
+			n := binary.PutVarint(mBuf, int64(row.Metric))
+			if _, err := w.w.Write(mBuf[:n]); err != nil {
+				return fmt.Errorf("failed to write the metric: %w", err)
 			}
 			// Write the timestamp
 			tsBuf := make([]byte, binary.MaxVarintLen64)
@@ -214,7 +217,7 @@ func newDiskWALReader(dir string) (*diskWALReader, error) {
 }
 
 // readAll reads all segment files and caches the result for each operation.
-func (f *diskWALReader) readAll() error {
+func (f *diskWALReader) readAll(option WalRecoveryOption) error {
 	for _, file := range f.files {
 		if file.IsDir() {
 			return fmt.Errorf("unexpected directory found under the WAL directory: %s", file.Name())
@@ -227,25 +230,39 @@ func (f *diskWALReader) readAll() error {
 			file: fd,
 			r:    bufio.NewReader(fd),
 		}
-		for segment.next() {
+
+		for segment.next(option) {
 			rec := segment.record()
 			switch rec.op {
 			case operationInsert:
 				f.rowsToInsert = append(f.rowsToInsert, rec.row)
 			}
+
 		}
 		if err := segment.close(); err != nil {
 			return err
 		}
 
 		err = segment.error()
+
+		if err != nil && option == AbsoluteConsistency {
+			log.Errorf("failed reading WAL with AbsoluteConsistency: %s", err)
+			return fmt.Errorf("encounter an error while reading WAL segment file %q: %w", file.Name(), segment.error())
+		}
+
 		if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) {
 			// It is not unusual for a line to be invalid, as it may well terminate in the middle of writing to the WAL.
 			return nil
 		}
+
 		if err != nil {
+			log.Errorf("encounter an error while reading WAL segment file %q: %v", file.Name(), segment.error())
+			if option == SkipAnyCorruptedRecord {
+				return nil
+			}
 			return fmt.Errorf("encounter an error while reading WAL segment file %q: %w", file.Name(), segment.error())
 		}
+
 	}
 	return nil
 }
@@ -259,7 +276,13 @@ type segment struct {
 	err     error
 }
 
-func (f *segment) next() bool {
+func (f *segment) skipAsCorrupted(err error) bool {
+	log.Warnf("skipping corrupted wal record: %s", err)
+	f.current = corruptedWalRecord
+	return true
+}
+
+func (f *segment) next(option WalRecoveryOption) bool {
 	op, err := f.r.ReadByte()
 	if errors.Is(err, io.EOF) {
 		return false
@@ -270,41 +293,43 @@ func (f *segment) next() bool {
 	}
 	switch walOperation(op) {
 	case operationInsert:
-		// Read the length of metric name.
-		metricLen, err := binary.ReadUvarint(f.r)
+
+		// Read metric
+		metric, err := binary.ReadVarint(f.r)
 		if err != nil {
-			f.err = fmt.Errorf("failed to read the length of metric name: %w", err)
-			return false
-		}
-		// Read the metric name.
-		metric := make([]byte, int(metricLen))
-		if _, err := io.ReadFull(f.r, metric); err != nil {
-			f.err = fmt.Errorf("failed to read the metric name: %w", err)
-			return false
-		}
-		// Read timestamp.
-		ts, err := binary.ReadVarint(f.r)
-		if err != nil {
-			f.err = fmt.Errorf("failed to read timestamp: %w", err)
-			return false
-		}
-		// Read value.
-		val, err := binary.ReadUvarint(f.r)
-		if err != nil {
-			f.err = fmt.Errorf("failed to read value: %w", err)
-			return false
+			if option == SkipAnyCorruptedRecord {
+				return f.skipAsCorrupted(err)
+			} else {
+				f.err = fmt.Errorf("failed to read metric in wal log: %w", err)
+				return false
+			}
 		}
 
-		m, err := strconv.Atoi(string(metric))
+		// Read timestamp
+		ts, err := binary.ReadVarint(f.r)
 		if err != nil {
-			f.err = fmt.Errorf("failed to read value: %w", err)
-			return false
+			if option == SkipAnyCorruptedRecord {
+				return f.skipAsCorrupted(err)
+			} else {
+				f.err = fmt.Errorf("failed to read timestamp: %w", err)
+				return false
+			}
+		}
+		// Read value
+		val, err := binary.ReadUvarint(f.r)
+		if err != nil {
+			if option == SkipAnyCorruptedRecord {
+				return f.skipAsCorrupted(err)
+			} else {
+				f.err = fmt.Errorf("failed to read value: %w", err)
+				return false
+			}
 		}
 
 		f.current = walRecord{
 			op: walOperation(op),
 			row: Row{
-				Metric: uint32(m),
+				Metric: uint32(metric),
 				DataPoint: DataPoint{
 					Timestamp: ts,
 					Value:     math.Float64frombits(val),
