@@ -6,6 +6,7 @@ import (
 )
 
 type walOperation byte
+type WalRecoveryOption int
 
 const (
 	// The record format for operateInsert is as shown below:
@@ -15,6 +16,12 @@ const (
 	   +--------+---------------------+--------+--------------------+----------------+
 	*/
 	operationInsert walOperation = iota
+	corrupted
+)
+const (
+	TolerateCorruptedTailRecords WalRecoveryOption = iota
+	AbsoluteConsistency
+	SkipAnyCorruptedRecord
 )
 
 // wal represents a write-ahead log, which offers durability guarantees.

@@ -133,3 +133,9 @@ func WithLkoStorage() Option {
 		getLko().disabled = false
 	}
 }
+
+func WithWalRecovery(option WalRecoveryOption) Option {
+	return func(s *storage) {
+		s.walRecoveryOption = option
+	}
+}
