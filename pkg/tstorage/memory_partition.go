@@ -201,6 +201,7 @@ func (m *memoryMetric) insertPoint(point *DataPoint) {
 			m.points[i] = point
 		}
 	*/
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -212,6 +213,7 @@ func (m *memoryMetric) insertPoint(point *DataPoint) {
 		atomic.AddInt64(&m.size, 1)
 		return
 	}
+
 	// Insert point in order
 	if m.points[size-1].Timestamp < point.Timestamp {
 		m.points = append(m.points, point)
