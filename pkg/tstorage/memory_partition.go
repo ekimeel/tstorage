@@ -27,12 +27,9 @@ type memoryPartition struct {
 	partitionDuration  int64
 	timestampPrecision TimestampPrecision
 	once               sync.Once
-
-	// Maximum number of points after which a partition gets persisted
-	partitionMaxSize int64
 }
 
-func newMemoryPartition(wal wal, partitionDuration time.Duration, precision TimestampPrecision, partitionMaxSize int64) partition {
+func newMemoryPartition(wal wal, partitionDuration time.Duration, precision TimestampPrecision) partition {
 	if wal == nil {
 		wal = &nopWAL{}
 	}
@@ -53,7 +50,6 @@ func newMemoryPartition(wal wal, partitionDuration time.Duration, precision Time
 		partitionDuration:  d,
 		wal:                wal,
 		timestampPrecision: precision,
-		partitionMaxSize:   partitionMaxSize,
 	}
 }
 
@@ -160,10 +156,6 @@ func (m *memoryPartition) size() int {
 
 func (m *memoryPartition) active() bool {
 	return m.maxTimestamp()-m.minTimestamp()+1 < m.partitionDuration
-}
-
-func (m *memoryPartition) underMaxSize() bool {
-	return m.numPoints < m.partitionMaxSize
 }
 
 func (m *memoryPartition) clean() error {

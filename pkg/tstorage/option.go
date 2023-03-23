@@ -8,16 +8,6 @@ import (
 // Option is an optional setting for NewStorage.
 type Option func(*storage)
 
-// WithPartitionMaxSize specifies the maximum size a partition can have
-// before been substuted by a new one.
-//
-// Defaults to 50KiB.
-func WithPartitionMaxSize(partitionMaxSize int64) Option {
-	return func(s *storage) {
-		s.partitionMaxSize = partitionMaxSize
-	}
-}
-
 // WithDatabaseMaxSize specifies the maximum size the database can have.
 // Higher size leads to deletion of oldest partitions until the database
 // fits within the maximum stablished size.
