@@ -180,22 +180,8 @@ func NewStorage(opts ...Option) (Storage, error) {
 		log.Error(err)
 	}
 
-	// periodically check and permanently remove expired partitions.
-	go func() {
-		ticker := time.NewTicker(checkExpiredInterval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-s.doneCh:
-				return
-			case <-ticker.C:
-				err := s.removeExpiredPartitions()
-				if err != nil {
-					log.Error(err)
-				}
-			}
-		}
-	}()
+	register(s)
+
 	return s, nil
 }
 
@@ -427,7 +413,7 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 
 	// Check for max partitions
 	// Only when there are disk partitions, hence more than 2
-	// If in memory mode, innecesary
+	// If in memory mode, unnecessary
 	if !s.inMemoryMode() && s.partitionList.size() > 2 {
 		numPart := s.partitionList.size() - 2
 		for ; numPart > int(s.maxPartitions); numPart-- {
