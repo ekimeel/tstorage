@@ -96,7 +96,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 		writeTimeout:       defaultWriteTimeout,
 		walBufferedSize:    defaultWALBufferedSize,
 		wal:                newNopWal(),
-		logger:             log.Logger{},
+		logger:             log.New(),
 		doneCh:             make(chan struct{}, 0),
 		databaseMaxSize:    defaultDatabaseMaxSize,
 		maxPartitions:      defaultMaxPartitions,
@@ -198,7 +198,7 @@ type storage struct {
 	databaseMaxSize    int64
 	maxPartitions      int64
 
-	logger         log.Logger
+	logger         *log.Logger
 	workersLimitCh chan struct{}
 	// wg must be incremented to guarantee all writes are done gracefully.
 	wg sync.WaitGroup

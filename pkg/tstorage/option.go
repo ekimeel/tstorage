@@ -87,12 +87,12 @@ func WithWriteTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithLogger specifies the logger to emit verbose output.
+// WithLogLevel specifies the log level to emit output.
 //
-// Defaults to a logger implementation that does nothing.
-func WithLogger(logger log.Logger) Option {
+// Defaults to a InfoLevel
+func WithLogLevel(level log.Level) Option {
 	return func(s *storage) {
-		s.logger = logger
+		s.logger.SetLevel(level)
 	}
 }
 
