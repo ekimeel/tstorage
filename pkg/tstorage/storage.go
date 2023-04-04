@@ -96,9 +96,8 @@ func NewStorage(opts ...Option) (Storage, error) {
 		writeTimeout:       defaultWriteTimeout,
 		walBufferedSize:    defaultWALBufferedSize,
 		wal:                newNopWal(),
-		logger:             log.Logger{},
+		logger:             log.New(),
 		doneCh:             make(chan struct{}, 0),
-		partitionMaxSize:   defaultPartitionMaxSize,
 		databaseMaxSize:    defaultDatabaseMaxSize,
 		maxPartitions:      defaultMaxPartitions,
 	}
@@ -196,11 +195,10 @@ type storage struct {
 	timestampPrecision TimestampPrecision
 	dataPath           string
 	writeTimeout       time.Duration
-	partitionMaxSize   int64
 	databaseMaxSize    int64
 	maxPartitions      int64
 
-	logger         log.Logger
+	logger         *log.Logger
 	workersLimitCh chan struct{}
 	// wg must be incremented to guarantee all writes are done gracefully.
 	wg sync.WaitGroup
@@ -289,7 +287,7 @@ func (s *storage) ensureActiveHead() error {
 // If none, it creates a new one.
 func (s *storage) ensureHeadInSize() error {
 	head := s.partitionList.getHead()
-	if head != nil && head.underMaxSize() {
+	if head != nil && !head.expired() {
 		return nil
 	}
 
@@ -407,7 +405,7 @@ func (s *storage) newPartition(p partition, punctuateWal bool) error {
 			}
 		}
 
-		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision, s.partitionMaxSize)
+		p = newMemoryPartition(s.wal, s.partitionDuration, s.timestampPrecision)
 	}
 	s.partitionList.insert(p)
 

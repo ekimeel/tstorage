@@ -6,7 +6,8 @@ This is forked repository with changes based on specific needs.
  - A new Last Known Observation (LKO) storage strategy is used to optimize heavy reads on the current value of a metric. This is enabled by default but can be disabled using the WithoutLkoStorage option.
  - Project layout has changed slightly by moving some structs into their own file for more separation of concerns.
  - WAL Recovery Options (TolerateCorruptedTailRecords, AbsoluteConsistency and SkipAnyCorruptedRecord)
- - A central storage manager that attempts to safely handle SIGQUIT, SIGTERM and SIGINT and flush wal logs
+ - A central storage manager that attempts to safely handle SIGQUIT, SIGTERM and SIGINT and flush wal logs 
+ - Removal of max size of partition as this was causing some data loss under stress
 
 credit to: github.com/nakabonne/tstorage
 

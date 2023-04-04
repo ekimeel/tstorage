@@ -8,16 +8,6 @@ import (
 // Option is an optional setting for NewStorage.
 type Option func(*storage)
 
-// WithPartitionMaxSize specifies the maximum size a partition can have
-// before been substuted by a new one.
-//
-// Defaults to 50KiB.
-func WithPartitionMaxSize(partitionMaxSize int64) Option {
-	return func(s *storage) {
-		s.partitionMaxSize = partitionMaxSize
-	}
-}
-
 // WithDatabaseMaxSize specifies the maximum size the database can have.
 // Higher size leads to deletion of oldest partitions until the database
 // fits within the maximum stablished size.
@@ -97,16 +87,16 @@ func WithWriteTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithLogger specifies the logger to emit verbose output.
+// WithLogLevel specifies the log level to emit output.
 //
-// Defaults to a logger implementation that does nothing.
-func WithLogger(logger log.Logger) Option {
+// Defaults to a InfoLevel
+func WithLogLevel(level log.Level) Option {
 	return func(s *storage) {
-		s.logger = logger
+		s.logger.SetLevel(level)
 	}
 }
 
-// WithWAL specifies the buffered byte size before flushing a WAL file.
+// WithWALBufferedSize specifies the buffered byte size before flushing a WAL file.
 // The larger the size, the less frequently the file is written and more write performance at the expense of durability.
 // Giving 0 means it writes to a file whenever data point comes in.
 // Giving -1 disables using WAL.
