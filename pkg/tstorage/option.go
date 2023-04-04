@@ -96,7 +96,7 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
-// WithWAL specifies the buffered byte size before flushing a WAL file.
+// WithWALBufferedSize specifies the buffered byte size before flushing a WAL file.
 // The larger the size, the less frequently the file is written and more write performance at the expense of durability.
 // Giving 0 means it writes to a file whenever data point comes in.
 // Giving -1 disables using WAL.
