@@ -613,13 +613,6 @@ func (s *storage) recoverWAL(walDir string) error {
 		return err
 	}
 
-	if s.partitionList.getTail() == nil {
-		i := s.partitionList.newIterator()
-		for i.next() {
-			s.partitionList.
-		}
-	}
-
 	if err := reader.readAll(s.walRecoveryOption); err != nil {
 		log.Errorf("failed to read WAL: %s", err)
 		return fmt.Errorf("failed to read WAL: %w", err)
