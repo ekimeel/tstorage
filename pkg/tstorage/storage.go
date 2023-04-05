@@ -271,7 +271,7 @@ func (s *storage) ensureActiveHead() error {
 		return nil
 	}
 
-	// All partitions seems to be inactive so add a new partition to the list.
+	// All partitions seem to be inactive so add a new partition to the list.
 	if err := s.newPartition(nil, true); err != nil {
 		return err
 	}
