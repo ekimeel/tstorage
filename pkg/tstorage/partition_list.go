@@ -2,13 +2,14 @@ package tstorage
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"sync/atomic"
 )
 
 // partitionList represents a linked list for partitions.
-// Each partition is arranged in order order of newest to oldest.
+// Each partition is arranged in order of newest to oldest.
 // That is, the head node is always the newest, the tail node is the oldest.
 //
 // Head and its next partitions must be writable to accept out-of-order data points
@@ -78,6 +79,15 @@ func (p *partitionListImpl) getTail() partition {
 	}
 	p.mu.RLock()
 	defer p.mu.RUnlock()
+
+	if p.tail == nil {
+		log.Warn("tail partition not found, attempting to recover tail")
+		i := p.newIterator()
+		for i.next() {
+			p.tail = i.currentNode()
+		}
+	}
+
 	return p.tail.value()
 }
 
