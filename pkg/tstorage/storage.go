@@ -291,7 +291,7 @@ func (s *storage) ensureHeadInSize() error {
 		return nil
 	}
 
-	// Head partition does not exist or exceds size
+	// Head partition does not exist or exceeds size
 	if err := s.newPartition(nil, true); err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func (s *storage) Select(metric uint32, start, end int64) ([]*DataPoint, error) 
 	return points, nil
 }
 
-func (w *storage) Poll(metric uint32) *DataPoint {
+func (s *storage) Poll(metric uint32) *DataPoint {
 	return getLko().poll(metric)
 }
 
