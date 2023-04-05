@@ -124,6 +124,7 @@ func WithLkoStorage() Option {
 	}
 }
 
+// WithWalRecovery sets the recover mode of the wall
 func WithWalRecovery(option WalRecoveryOption) Option {
 	return func(s *storage) {
 		s.walRecoveryOption = option
